@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #-*- coding: utf-8 -*-
 
+from __future__ import print_function
 import os
 import sys
 import errno
@@ -63,13 +64,26 @@ def main():
             continue
 
         hasher = hashlib.new(opts.algorithm)
-        hash = mp3hash.mp3hash(path, maxbytes=opts.maxbytes, hasher=hasher)
+        hash_result = mp3hash.mp3hash(path, maxbytes=opts.maxbytes, hasher=hasher)
+        printfunc(arg=arg, path=path, hash_result=hash_result, hash_alg=opts.algorithm, opts=opts)
 
-        # display file hash or just the hash
-        filename = '' if opts.hash else ' ' + os.path.basename(path)
+def legacy_print(path, hash_result, hash_only=False):
+    # display file hash or just the hash
+    if hash_only:
+        filename = ''
+    else:
+        filename = ' ' + os.path.basename(path)
 
-        print(hash + filename)
+    print(hash_result + filename)
 
+def tagged_print(arg, hash_result, hash_alg):
+    print("MP3-%s (%s) = %s" % (hash_alg.upper(), arg, hash_result))
+
+def printfunc(arg=None, path=None, hash_result=None, hash_alg=None, opts={}):
+    if opts.tag:
+        tagged_print(arg, hash_result, hash_alg)
+    else:
+        legacy_print(path, hash_result, hash_only=opts.hash)
 
 def parse_arguments():
     parser = OptionParser()
@@ -89,6 +103,9 @@ def parse_arguments():
 
     parser.add_option("-o", "--output", default=False,
                       help="Redirect output to a file")
+
+    parser.add_option("-t", "--tag", default=False, action="store_true",
+                      help="Produce BSD-style tagged hash output")
 
     parser.set_usage("Usage: [options] FILE [FILE ..]")
 

@@ -39,6 +39,8 @@ import struct
 import hashlib
 from collections import deque
 from itertools import repeat, chain
+import sys
+import operator
 
 
 def mp3hash(path, maxbytes=None, hasher=None):
@@ -71,7 +73,15 @@ def hashfile(file, start, end, hasher, maxbytes=None, blocksize=2 ** 19):
     nblocks = size // blocksize
     spare_block_size = size % blocksize
 
-    blocksizes = repeat(blocksize, nblocks)
+    if False:
+        pass
+    elif sys.version_info.major == 3:
+        blocksizes = operator.mul(blocksize, nblocks)
+    elif sys.version_info.major == 2:
+        blocksizes = repeat(blocksize, nblocks)
+    else:
+      raise
+
     if spare_block_size:
         blocksizes = chain(blocksizes, [spare_block_size])
 
@@ -195,8 +205,16 @@ class TaggedFile(object):
         header = self.file.read(ID3V2_HEADER_SIZE)
 
         id3, v, r, flags, size = struct.unpack('>3sBBB4s', header)
+        #print(size.split())
 
-        return id3, v, r, flags, parse_7bitint(map(ord, size))
+        if sys.version_info.major == 2:
+            ret = (id3, v, r, flags, parse_7bitint(map(ord, size)))
+        elif sys.version_info.major == 3:
+            ret = (id3, v, r, flags, parse_7bitint(list(size)))
+        else:
+            raise
+        #sys.stdout.write(repr(ret)+"\n")
+        return ret
 
     @property
     @memento
